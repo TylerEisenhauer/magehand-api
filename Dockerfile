@@ -8,4 +8,8 @@ COPY package.json tsconfig.json yarn.lock /app/
 
 RUN yarn set version berry && yarn
 
+ARG NODE_ENV="production"
+
+ENV NODE_ENV ${NODE_ENV}
+
 CMD ["yarn", "start"]
