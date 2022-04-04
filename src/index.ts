@@ -1,11 +1,12 @@
+import { config } from 'dotenv-flow'
+import express from 'express'
+
 import auth from './auth/auth'
 import connect from './connect'
-import express from 'express'
-import { config } from 'dotenv-flow'
 import loginRouter from './routers/loginRouter'
+import sessionRouter from './routers/sessionsRouter'
 import settingsRouter from './routers/settingsRouter'
 import usersRouter from './routers/usersRouter'
-import sessionRouter from './routers/sessionsRouter'
 import { startWorker } from './worker'
 
 config()
