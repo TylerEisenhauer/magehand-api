@@ -7,6 +7,7 @@ export interface ISession extends Document {
     description: string
     guild: string
     location: string
+    messageId?: string
     name: string
     participants: string[]
     reminderSent: boolean
@@ -19,6 +20,7 @@ const SessionSchema: Schema = new Schema({
     description: {type: String, required: true},
     guild: {type: String, required: true},
     location: {type: String, required: true},
+    messageId: {type: String, required: false},
     name: {type: String, required: true},
     participants: {type: Array.of(String), required: false},
     reminderSent: {type: Boolean, required: true}

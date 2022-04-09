@@ -6,23 +6,19 @@ export async function startWorker() {
     await processSessions()
     setInterval(async () => {
         await processSessions()
-    }, 1000 * 10)
+    }, 1000 * 60)
 }
 
 async function processSessions() {
     try {
         const startDate = DateTime.now()
         const endDate = startDate.plus({ hours: 6 })
-        console.log(startDate.toJSDate().toString())
-        console.log(endDate.toJSDate().toString())
 
         const sessions: ISession[] = await Session.find({
             date: { $gte: startDate, $lte: endDate },
             reminderSent: false,
             cancelled: false
         })
-
-        console.log(sessions)
 
         if (sessions) {
             const connectionString = process.env.QUEUE_CONNECTION
