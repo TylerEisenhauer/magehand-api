@@ -1,4 +1,5 @@
-import { config } from 'dotenv-flow'
+import './config'
+
 import express from 'express'
 
 import auth from './auth/auth'
@@ -9,7 +10,6 @@ import settingsRouter from './routers/settingsRouter'
 import usersRouter from './routers/usersRouter'
 import { startWorker } from './worker'
 
-config()
 connect(process.env.MONGO_CONNECTION)
 
 startWorker()
