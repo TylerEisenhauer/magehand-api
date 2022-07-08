@@ -2,12 +2,15 @@ import './config'
 
 import express from 'express'
 
-import auth from './auth/auth'
+import { enforceRole } from './auth/'
 import connect from './connect'
-import loginRouter from './routers/loginRouter'
-import sessionRouter from './routers/sessionsRouter'
-import settingsRouter from './routers/settingsRouter'
-import usersRouter from './routers/usersRouter'
+import {
+    campaignRouter,
+    loginRouter,
+    sessionRouter,
+    settingsRouter,
+    usersRouter
+} from './routers'
 import { startWorker } from './worker'
 
 connect(process.env.MONGO_CONNECTION)
@@ -18,9 +21,10 @@ const app = express()
 app.use(express.json())
 
 app.use('/api/login', loginRouter)
-app.use('/api/users', auth.enforceRole('admin'), usersRouter)
-app.use('/api/settings', auth.enforceRole('admin'), settingsRouter)
-app.use('/api/session', auth.enforceRole('admin'), sessionRouter)
+app.use('/api/users', enforceRole('admin'), usersRouter)
+app.use('/api/settings', enforceRole('admin'), settingsRouter)
+app.use('/api/session', enforceRole('admin'), sessionRouter)
+app.use('/api/campaign', enforceRole('admin'), campaignRouter)
 app.use('/api/', (req, res) => {
     res.send('MageHand API')
 })

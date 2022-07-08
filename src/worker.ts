@@ -1,14 +1,18 @@
 import amqp from 'amqplib'
 import { DateTime } from 'luxon'
+import { calculateNextSessionOccurrance } from './helpers'
 
 import Campaign, { ICampaign } from './types/mongoose/campaign'
 import Session, { ISession } from './types/mongoose/session'
 
 export async function startWorker() {
+    await processCampaigns()
     await processSessions()
+
     setInterval(async () => {
+        await processCampaigns()
         await processSessions()
-    }, 1000 * 60)
+    }, 1000 * 10)
 }
 
 async function processSessions() {
@@ -64,71 +68,42 @@ async function processSessions() {
 }
 
 async function processCampaigns() {
-    const currentDate = DateTime.now()
+    try {
+        const currentDate = DateTime.now()
 
-    const campaigns: ICampaign[] = await Campaign.find({
-        ended: false,
-        $or: [
-            { scheduledThrough: null },
-            { scheduledThrough: { $lte: currentDate } }
-        ]
-    })
-
-    campaigns.map(async campaign => {
-        const nextOccurance = calculateNextOccurance(currentDate, campaign)
-        const sessionNumber = campaign.nextSessionNumber ?? campaign.initialSessionNumber ?? 0
-
-        const session: ISession = await Session.create({
-            campaign: campaign.id,
-            cancelled: false,
-            channel: campaign.channel,
-            date: nextOccurance.toJSDate(),
-            description: campaign.description,
-            guild: campaign.guild,
-            location: campaign.location,
-            name: `${campaign.name} - Session ${sessionNumber}`,
-            participants: [],
-            reminderSent: false
+        const campaigns: ICampaign[] = await Campaign.find({
+            ended: false,
+            $or: [
+                { scheduledThrough: null },
+                { scheduledThrough: { $lte: currentDate } }
+            ]
         })
 
-        await campaign.updateOne({
-            $set: {
-                scheduledThrough: session.date,
-                nextSessionNumber: sessionNumber + 1
-            }
+        campaigns.map(async campaign => {
+            const nextOccurance = calculateNextSessionOccurrance(currentDate, campaign)
+            const sessionNumber = campaign.nextSessionNumber || 0
+
+            const session: ISession = await Session.create({
+                campaign: campaign.id,
+                cancelled: false,
+                channel: campaign.channel,
+                date: nextOccurance.toJSDate(),
+                description: campaign.description,
+                guild: campaign.guild,
+                location: campaign.location,
+                name: `${campaign.name} - Session ${sessionNumber}`,
+                participants: [],
+                reminderSent: false
+            })
+
+            await campaign.updateOne({
+                $set: {
+                    scheduledThrough: session.date,
+                    nextSessionNumber: sessionNumber + 1
+                }
+            })
         })
-    })
-}
-
-export function calculateNextOccurance(currentDate: DateTime, campaign: ICampaign) {
-    if (campaign.frequency.occurs === 'advancedScheduling') {
-        const currentDayOfWeek = currentDate.weekday
-        const nextDayOfWeek = campaign.frequency.daysOfWeek.slice().sort().find(x => x >= currentDayOfWeek) ?? campaign.frequency.daysOfWeek.slice().sort()[0]
-
-        let nextOccurance: DateTime =
-            nextDayOfWeek >= currentDayOfWeek ?
-                currentDate.plus({ days: nextDayOfWeek - currentDayOfWeek }) :
-                currentDate.plus({ days: (7 + nextDayOfWeek) - currentDayOfWeek })
-
-
-        const monthlyOccuranceNumber = Math.ceil(nextOccurance.day / 7)
-        const nextMonthlyOccuranceNumber = campaign.frequency.weekNumbers.slice().sort().find(x => x >= monthlyOccuranceNumber) ?? campaign.frequency.weekNumbers.slice().sort()[0]
-
-        if (monthlyOccuranceNumber !== nextMonthlyOccuranceNumber) {
-            if (monthlyOccuranceNumber < nextMonthlyOccuranceNumber) {
-                nextOccurance = nextOccurance.plus({ weeks: nextMonthlyOccuranceNumber - monthlyOccuranceNumber })
-            } else {
-                nextOccurance = nextOccurance.plus({ weeks: nextMonthlyOccuranceNumber + 1 })
-            }
-        }
-
-        const parsedTime = DateTime.fromISO(campaign.frequency.time)
-        return DateTime.local(nextOccurance.year, nextOccurance.month, nextOccurance.day, parsedTime.hour, parsedTime.minute, {
-            zone: campaign.frequency.timezone || 'America/Chicago'
-        })
-    } else if (campaign.frequency.occurs === 'weekly') {
-        const lastSession = campaign.scheduledThrough || campaign.startDate
-        
-        return DateTime.fromJSDate(lastSession, { zone: campaign.frequency.timezone || 'America/Chicago' }).plus({ weeks: campaign.frequency.weeksBetween + 1 })
+    } catch (e) {
+        console.log(e)
     }
 }
