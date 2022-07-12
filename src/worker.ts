@@ -51,7 +51,7 @@ async function processCampaigns() {
             ended: false,
             $or: [
                 { scheduledThrough: null },
-                { scheduledThrough: { $lte: currentDate.plus({ hour: 6 }) } } // wait 6 hours so the next session isn't scheduled during the currently running one
+                { scheduledThrough: { $lte: currentDate.minus({ hour: 6 }) } } // wait 6 hours so the next session isn't scheduled during the currently running one
             ]
         })
 
