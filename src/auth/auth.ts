@@ -30,7 +30,7 @@ const enforceRole = (role: string) => {
     }
 }
 
-export default {
+export {
     authenticateToken,
     enforceRole
 }

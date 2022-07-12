@@ -1,0 +1,5 @@
+export {default as campaignRouter} from './campaignRouter'
+export {default as loginRouter} from './loginRouter'
+export {default as sessionRouter} from './sessionRouter'
+export {default as settingsRouter} from './settingsRouter'
+export {default as usersRouter} from './usersRouter'

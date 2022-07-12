@@ -1,5 +1,4 @@
 import express from 'express'
-import {body, param, query} from 'express-validator'
 import messagesController from '../controllers/sessionController'
 
 let sessionRouter = express.Router()
