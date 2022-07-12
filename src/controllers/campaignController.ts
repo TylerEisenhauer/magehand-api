@@ -36,6 +36,7 @@ const addCampaign = async (req: express.Request, res: express.Response) => {
         const campaign: ICampaign = {
             ended: false,
             ...req.body,
+            startDate: DateTime.fromISO(req.body.startDate).toJSDate(), //hack to get the format right
             nextSessionNumber: req.body.initialSessionNumber || 0,
         }
         const firstSessionDate = calculateNextSessionOccurrance(DateTime.now(), campaign).toJSDate()
@@ -63,7 +64,7 @@ const addCampaign = async (req: express.Request, res: express.Response) => {
 
         return res.send(newCampaign).status(201)
     } catch (e) {
-        console.log(e)
+        // console.log(e)
         return res.sendStatus(500)
     }
 }

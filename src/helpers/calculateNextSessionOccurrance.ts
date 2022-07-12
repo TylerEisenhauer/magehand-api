@@ -32,6 +32,7 @@ export function calculateNextSessionOccurrance(currentDate: DateTime, campaign: 
     } else if (campaign.occurs.frequency === 'weekly') {
         if (!campaign.scheduledThrough) {
             const startDate = DateTime.fromJSDate(campaign.startDate)
+            console.log(campaign.startDate)
             const parsedTime = DateTime.fromISO(campaign.occurs.time)
             return DateTime.local(startDate.year, startDate.month, startDate.day, parsedTime.hour, parsedTime.minute, { zone: campaign.occurs.timezone || 'America/Chicago' })
         }
