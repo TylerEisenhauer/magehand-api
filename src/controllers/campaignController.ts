@@ -61,7 +61,7 @@ const addCampaign = async (req: express.Request, res: express.Response) => {
 
         await sendSessionsToQueue([session])
 
-        return res.send(campaign).status(201)
+        return res.send(newCampaign).status(201)
     } catch (e) {
         console.log(e)
         return res.sendStatus(500)
