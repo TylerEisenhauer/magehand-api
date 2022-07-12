@@ -1,7 +1,7 @@
-import amqp from 'amqplib'
 import { DateTime } from 'luxon'
-import { calculateNextSessionOccurrance } from './helpers'
 
+import { calculateNextSessionOccurrance } from './helpers'
+import { sendSessionsToQueue } from './helpers/sendSessionsToQueue'
 import Campaign, { ICampaign } from './types/mongoose/campaign'
 import Session, { ISession } from './types/mongoose/session'
 
@@ -21,46 +21,22 @@ async function processSessions() {
         const endDate = startDate.plus({ hours: 6 })
 
         const sessions: ISession[] = await Session.find({
-            date: { $gte: startDate, $lte: endDate },
-            reminderSent: false,
-            cancelled: false
+            $or: [
+                {
+                    date: { $gte: startDate, $lte: endDate },
+                    reminderSent: false,
+                    cancelled: false
+                },
+                {
+                    cancelled: false,
+                    messageId: null
+                }
+            ]
+
         })
 
         if (sessions) {
-            const connectionString = process.env.QUEUE_CONNECTION
-            const queueName = process.env.SESSION_QUEUE_NAME
-
-            const conn = await amqp.connect(connectionString)
-
-            const channel = await conn.createConfirmChannel()
-
-            const exchange = await channel.assertExchange(`${queueName}-delayed`, 'x-delayed-message', {
-                autoDelete: true,
-                durable: true,
-                arguments: {
-                    'x-delayed-type': 'direct'
-                }
-            })
-
-            const queue = await channel.assertQueue(queueName, {
-                durable: true
-            })
-
-            await channel.bindQueue(queueName, exchange.exchange, queueName)
-
-            sessions.map(async session => {
-                channel.publish(exchange.exchange, queue.queue, Buffer.from(JSON.stringify(session)), {
-                    headers: {
-                        'x-delay': 0
-                    },
-                    persistent: true
-                })
-                await session.updateOne({ $set: { reminderSent: true } })
-            })
-
-            await channel.waitForConfirms()
-
-            await conn.close()
+            sendSessionsToQueue(sessions)
         }
     } catch (e) {
         console.log(e)
@@ -75,7 +51,7 @@ async function processCampaigns() {
             ended: false,
             $or: [
                 { scheduledThrough: null },
-                { scheduledThrough: { $lte: currentDate } }
+                { scheduledThrough: { $lte: currentDate.plus({ hour: 6 }) } } // wait 6 hours so the next session isn't scheduled during the currently running one
             ]
         })
 
@@ -92,6 +68,7 @@ async function processCampaigns() {
                 guild: campaign.guild,
                 location: campaign.location,
                 name: `${campaign.name} - Session ${sessionNumber}`,
+                owner: campaign.owner,
                 participants: [],
                 reminderSent: false
             })

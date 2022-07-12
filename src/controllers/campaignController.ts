@@ -1,6 +1,10 @@
 import express from 'express'
+import { DateTime } from 'luxon'
 import mongoose from 'mongoose'
+
+import { calculateNextSessionOccurrance, sendSessionsToQueue } from '../helpers'
 import Campaign, { ICampaign } from '../types/mongoose/campaign'
+import Session, { ISession } from '../types/mongoose/session'
 
 const getCampaignById = async (req: express.Request, res: express.Response) => {
     const { id } = req.params
@@ -28,13 +32,40 @@ const getCampaignsByOwner = async (req: express.Request, res: express.Response) 
 }
 
 const addCampaign = async (req: express.Request, res: express.Response) => {
-    const campaign: ICampaign = {
-        ended: false,
-        ...req.body,
-        nextSessionNumber: req.body.initialSessionNumber || 0,
-    }
+    try {
+        const campaign: ICampaign = {
+            ended: false,
+            ...req.body,
+            nextSessionNumber: req.body.initialSessionNumber || 0,
+        }
+        const firstSessionDate = calculateNextSessionOccurrance(DateTime.now(), campaign).toJSDate()
 
-    return res.send(await Campaign.create(campaign)).status(201)
+        const newCampaign: ICampaign = await Campaign.create({
+            ...campaign,
+            scheduledThrough: firstSessionDate
+        })
+
+        const session: ISession = await Session.create({
+            campaign: newCampaign.id,
+            cancelled: false,
+            channel: newCampaign.channel,
+            date: newCampaign.scheduledThrough,
+            description: newCampaign.description,
+            guild: newCampaign.guild,
+            location: newCampaign.location,
+            name: `${newCampaign.name} - Session ${newCampaign.nextSessionNumber}`,
+            owner: newCampaign.owner,
+            participants: [],
+            reminderSent: false
+        })
+
+        await sendSessionsToQueue([session])
+
+        return res.send(campaign).status(201)
+    } catch (e) {
+        console.log(e)
+        return res.sendStatus(500)
+    }
 }
 
 const updateCampaign = async (req: express.Request, res: express.Response) => {
@@ -48,7 +79,7 @@ const updateCampaign = async (req: express.Request, res: express.Response) => {
 
 const deleteCampaign = async (req: express.Request, res: express.Response) => {
     const { id } = req.params
-    
+
     const deletedCampaign = await Campaign.findOneAndDelete({ _id: id })
     if (deletedCampaign) {
         return res.sendStatus(204)

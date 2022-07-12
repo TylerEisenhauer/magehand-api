@@ -10,6 +10,7 @@ export interface ISession extends Document {
     location: string
     messageId?: string
     name: string
+    owner: string
     participants: string[]
     reminderSent: boolean
 }
@@ -24,6 +25,7 @@ const SessionSchema: Schema = new Schema({
     location: {type: String, required: true},
     messageId: {type: String, required: false},
     name: {type: String, required: true},
+    owner: {type: String, required: true},
     participants: {type: [String], required: false},
     reminderSent: {type: Boolean, required: true}
 })
