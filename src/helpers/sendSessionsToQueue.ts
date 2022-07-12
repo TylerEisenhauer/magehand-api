@@ -33,7 +33,8 @@ export async function sendSessionsToQueue(sessions: ISession[]) {
                     },
                     persistent: true
                 })
-                await session.updateOne({ $set: { reminderSent: true } })
+                const isReminder = session.messageId ? true : false
+                await session.updateOne({ $set: { reminderSent: isReminder } })
             })
 
             await channel.waitForConfirms()
