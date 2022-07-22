@@ -73,6 +73,40 @@ describe('Calculate Next Session Date', () => {
 
             expect(result).toEqual(expected)
         })
+        test('Not skip first week of month', () => {
+            const currentDate = DateTime.local(2022, 7, 21)
+            const campaign: Partial<ICampaign> = {
+                scheduledThrough: DateTime.local(2022, 7, 20, 19, 30).toJSDate(),
+                occurs: {
+                    frequency: 'advanced',
+                    daysOfWeek: [3],
+                    weekNumbers: [1, 2, 3],
+                    time: '19:30',
+                    timezone: 'America/Chicago'
+                }
+            }
+            const result = calculateNextSessionOccurrance(currentDate, campaign)
+            const expected = DateTime.local(2022, 8, 3, 19, 30, { zone: 'America/Chicago' })
+    
+            expect(result).toEqual(expected)
+        })
+        test('Handle only first week of month', () => {
+            const currentDate = DateTime.local(2022, 7, 7)
+            const campaign: Partial<ICampaign> = {
+                scheduledThrough: DateTime.local(2022, 7, 6, 19, 30).toJSDate(),
+                occurs: {
+                    frequency: 'advanced',
+                    daysOfWeek: [3],
+                    weekNumbers: [1],
+                    time: '19:30',
+                    timezone: 'America/Chicago'
+                }
+            }
+            const result = calculateNextSessionOccurrance(currentDate, campaign)
+            const expected = DateTime.local(2022, 8, 3, 19, 30, { zone: 'America/Chicago' })
+    
+            expect(result).toEqual(expected)
+        })
         test('Skip multiple weeks', () => {
             const currentDate = DateTime.local(2022, 6, 2)
             const campaign: Partial<ICampaign> = {

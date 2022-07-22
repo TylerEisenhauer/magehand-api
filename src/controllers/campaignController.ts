@@ -37,7 +37,7 @@ const addCampaign = async (req: express.Request, res: express.Response) => {
             ended: false,
             ...req.body,
             startDate: DateTime.fromISO(req.body.startDate).toJSDate(), //hack to get the format right
-            nextSessionNumber: req.body.initialSessionNumber || 0,
+            nextSessionNumber: req.body.initialSessionNumber + 1 || 1,
         }
         const firstSessionDate = calculateNextSessionOccurrance(DateTime.now(), campaign).toJSDate()
 
@@ -54,7 +54,7 @@ const addCampaign = async (req: express.Request, res: express.Response) => {
             description: newCampaign.description,
             guild: newCampaign.guild,
             location: newCampaign.location,
-            name: `${newCampaign.name} - Session ${newCampaign.nextSessionNumber}`,
+            name: `${newCampaign.name} - Session ${newCampaign.nextSessionNumber - 1}`, //correcting for incrementing above, otherwise we have to turn right around and update the newly created campaign
             owner: newCampaign.owner,
             participants: [],
             reminderSent: false
@@ -64,7 +64,7 @@ const addCampaign = async (req: express.Request, res: express.Response) => {
 
         return res.send(newCampaign).status(201)
     } catch (e) {
-        // console.log(e)
+        console.log(e)
         return res.sendStatus(500)
     }
 }

@@ -13,7 +13,6 @@ export function calculateNextSessionOccurrance(currentDate: DateTime, campaign: 
                 calcFromDate.plus({ days: nextDayOfWeek - currentDayOfWeek }) :
                 calcFromDate.plus({ days: (7 + nextDayOfWeek) - currentDayOfWeek })
 
-
         const monthlyOccuranceNumber = Math.ceil(nextOccurance.day / 7)
         const nextMonthlyOccuranceNumber = campaign.occurs.weekNumbers.slice().sort().find(x => x >= monthlyOccuranceNumber) || campaign.occurs.weekNumbers.slice().sort()[0]
 
@@ -21,7 +20,9 @@ export function calculateNextSessionOccurrance(currentDate: DateTime, campaign: 
             if (monthlyOccuranceNumber < nextMonthlyOccuranceNumber) {
                 nextOccurance = nextOccurance.plus({ weeks: nextMonthlyOccuranceNumber - monthlyOccuranceNumber })
             } else {
-                nextOccurance = nextOccurance.plus({ weeks: nextMonthlyOccuranceNumber + 1 })
+                do {
+                    nextOccurance = nextOccurance.plus({ weeks: 1 })
+                } while (Math.ceil(nextOccurance.day / 7) > nextMonthlyOccuranceNumber)
             }
         }
 
