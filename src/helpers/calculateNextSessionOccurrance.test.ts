@@ -107,6 +107,57 @@ describe('Calculate Next Session Date', () => {
     
             expect(result).toEqual(expected)
         })
+        test('Leap year consecutive sessions', () => {
+            const currentDate = DateTime.local(2024, 2, 23)
+            const campaign: Partial<ICampaign> = {
+                scheduledThrough: DateTime.local(2024, 2, 22, 19, 30).toJSDate(),
+                occurs: {
+                    frequency: 'advanced',
+                    daysOfWeek: [4],
+                    weekNumbers: [1, 2, 3, 4, 5],
+                    time: '19:30',
+                    timezone: 'America/Chicago'
+                }
+            }
+            const result = calculateNextSessionOccurrance(currentDate, campaign)
+            const expected = DateTime.local(2024, 2, 29, 19, 30, { zone: 'America/Chicago' })
+    
+            expect(result).toEqual(expected)
+        })
+        test('Leap year skip sessions when 4 occurances', () => {
+            const currentDate = DateTime.local(2024, 2, 17)
+            const campaign: Partial<ICampaign> = {
+                scheduledThrough: DateTime.local(2024, 2, 16, 19, 30).toJSDate(),
+                occurs: {
+                    frequency: 'advanced',
+                    daysOfWeek: [5],
+                    weekNumbers: [1, 2, 3],
+                    time: '19:30',
+                    timezone: 'America/Chicago'
+                }
+            }
+            const result = calculateNextSessionOccurrance(currentDate, campaign)
+            const expected = DateTime.local(2024, 3, 1, 19, 30, { zone: 'America/Chicago' })
+    
+            expect(result).toEqual(expected)
+        })
+        test('Leap year skip sessions when 5 occurances', () => {
+            const currentDate = DateTime.local(2024, 2, 16)
+            const campaign: Partial<ICampaign> = {
+                scheduledThrough: DateTime.local(2024, 2, 15, 19, 30).toJSDate(),
+                occurs: {
+                    frequency: 'advanced',
+                    daysOfWeek: [4],
+                    weekNumbers: [1, 2, 3],
+                    time: '19:30',
+                    timezone: 'America/Chicago'
+                }
+            }
+            const result = calculateNextSessionOccurrance(currentDate, campaign)
+            const expected = DateTime.local(2024, 3, 7, 19, 30, { zone: 'America/Chicago' })
+    
+            expect(result).toEqual(expected)
+        })
         test('Handle only first week of month', () => {
             const currentDate = DateTime.local(2022, 7, 7)
             const campaign: Partial<ICampaign> = {
