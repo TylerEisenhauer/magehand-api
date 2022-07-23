@@ -20,9 +20,12 @@ export function calculateNextSessionOccurrance(currentDate: DateTime, campaign: 
             if (monthlyOccuranceNumber < nextMonthlyOccuranceNumber) {
                 nextOccurance = nextOccurance.plus({ weeks: nextMonthlyOccuranceNumber - monthlyOccuranceNumber })
             } else {
-                do {
-                    nextOccurance = nextOccurance.plus({ weeks: 1 })
-                } while (Math.ceil(nextOccurance.day / 7) > nextMonthlyOccuranceNumber)
+                const firstDayInMonth = DateTime.local(calcFromDate.year, calcFromDate.month, 1)
+                const adjustment = nextDayOfWeek >= firstDayInMonth.weekday ? nextDayOfWeek - firstDayInMonth.weekday : nextDayOfWeek - firstDayInMonth.weekday + 7
+                const firstTargetDayInMonth = firstDayInMonth.plus({ days: adjustment })
+                const occurancesInMonth = firstTargetDayInMonth.day + 28 > firstTargetDayInMonth.daysInMonth ? 4 : 5
+                
+                nextOccurance = nextOccurance.plus({weeks: occurancesInMonth - monthlyOccuranceNumber + 1})
             }
         }
 
